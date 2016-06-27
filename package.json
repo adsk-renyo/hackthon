@@ -1,0 +1,29 @@
+{
+  "name": "Web-Reviewer",
+  "description": "A basic reviewer app with Node and Angular",
+  "version": "1.0.0",
+  "dependencies": {
+    "bluebird": "^3.4.1",
+    "body-parser": "^1.15.2",
+    "express": "^4.13.4",
+    "multer": "^1.1.0",
+    "request": "^2.72.0",
+    "serve-favicon": "^2.3.0",
+    "streamifier": "^0.1.1"
+  },
+  "files": [
+    "README.md"
+  ],
+  "contributors": [
+    "Ilona Budapesti <ilona.budapesti@hackreactor.com>",
+    "Will Gester <will.gester@hackreactor.com>"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/remotebeta/sprint.autodesk.1.web-reviewer"
+  }
+}

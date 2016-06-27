@@ -1,0 +1,33 @@
+/* ==========================================================================
+   Author's custom styles
+   ========================================================================== */
+
+body {
+  padding-top: 50px;
+  padding-bottom: 20px;
+  margin: 0;
+}
+
+#viewerDiv {
+  height: 480px; 
+  width: 1000px; 
+  overflow: hidden; 
+  position: relative;
+}
+
+footer {
+    padding-top: 50px;
+}
+
+section {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+#upload-status {
+    font-weight: bold;
+    padding-left: 100px;
+}
+#upload-container {
+    display:flex;
+}
