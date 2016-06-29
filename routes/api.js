@@ -5,6 +5,7 @@ var router = express.Router();
 var forge = require('../forge/services.js');
 var multer = require('multer')
 var bodyParser = require('body-parser')
+var fs = require('fs');
 router.use( bodyParser() );       // to support JSON-encoded bodies
 
 router.post("/signin", function(req, res) {
@@ -39,6 +40,25 @@ router.get("/viewStatus", function(req, res) {
     .then(function(resp) {
        res.json(resp);
     });
+});
+
+router.get("/hello", function(req, res) {
+    res.json({hello: 'world'});
+});
+
+router.get("/getBucketObjects", function(req, res) {
+    forge.getBucketObjects().then(function(resp) {
+        res.json(resp);
+    })
+});
+
+
+router.get("/getThumbnail/:objectId", function(req, res) {
+    var base64Urn = req.params.objectId;
+    forge.getThumbnail(base64Urn).then(function(resp) {
+        res.send(resp);
+    })
+
 });
 
 module.exports = router;

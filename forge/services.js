@@ -7,20 +7,24 @@ var streamifier = require('streamifier');
 
 var baseUrl = 'https://developer-stg.api.autodesk.com';
 var version = 'v1';
+var v2 = 'v2';
 var forgeUrls = {
 	authenticationUrl: baseUrl + '/authentication/' + version + '/authenticate',
 	ossUrl: baseUrl + '/oss/' + version + '/buckets',
     viewingUrl: baseUrl + '/viewingservice/'  + version,
     registerUrl: baseUrl + '/viewingservice/'  + version +  '/register',
-    relationshipUrl: baseUrl + '/references/'  + version +  '/setreference'
+    relationshipUrl: baseUrl + '/references/'  + version +  '/setreference',
+    bucketQueryUrl: baseUrl + '/oss/' + v2 + '/buckets',
 };
 
 var grantType = 'client_credentials';
 var	scope = 'data:read data:write data:create data:search bucket:create bucket:read bucket:update';
 
-
+var cachedTokenObj = undefined;
 
 var authenticate = function() {
+    if(cachedTokenObj) return Promise.resolve(cachedTokenObj);
+
     return request( {
         url: forgeUrls.authenticationUrl,
         method: 'POST',
@@ -33,7 +37,8 @@ var authenticate = function() {
         }   
     })
     .then(function(resp) {     
-      return JSON.parse(resp.body);
+      cachedTokenObj = JSON.parse(resp.body);
+      return cachedTokenObj;
      });
 };
 
@@ -201,13 +206,54 @@ var createRelationships = function(dependencies) {
     });
 };
 
+var getBucketObjects = function () {
+    return authenticate()
+        .then(creds => creds.access_token).then(function(token){
+            var url = forgeUrls.bucketQueryUrl + '/' + bucketname + '/objects';
+            return request({
+                url: url,
+                method: 'GET',
+                headers: { Authorization: 'Bearer ' + token },
+            }).then(function (resp) {
+                var items = JSON.parse(resp.body).items || [];
+                console.log(items);
+                return items;
+            })
+        });
+}
+
+
+var getThumbnail = function (urn) {
+    var baseUrl = "https://developer-stg.api.autodesk.com/modelderivative/v2/designdata";
+    var urn64 = new Buffer(urn).toString('base64');
+    //var urn64 = 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6cmVueW9fc3RnX2J1Y2tldC9idWxsLm9iag==';//
+    var url = baseUrl + "/" + urn64 + "/thumbnail";
+
+    return authenticate()
+        .then(creds => creds.access_token).then(function(token){
+            return request({
+                url: url,
+                method: 'GET',
+                encoding: null,
+                headers: { Authorization: 'Bearer ' + token },
+            }).then(function (resp) {
+                var base64Body = new Buffer(resp.body).toString('base64');
+                var dataURI = "data:" + "image/png" + ";base64," + base64Body;
+                return dataURI;
+            })
+        });
+}
+
+
 module.exports = {
     authenticate: authenticate,
     upload: upload,
     register: register,
     getStatus: getStatus,
     getViewStatus: getViewStatus,
-    createRelationships:createRelationships
+    createRelationships:createRelationships,
+    getBucketObjects:getBucketObjects,
+    getThumbnail:getThumbnail
 }
 
 var bucketname = 'renyo_stg_bucket'
