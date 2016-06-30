@@ -18,14 +18,14 @@ import {
 //var TimerMixin = require('react-timer-mixin');
 import TimerMixin from 'react-timer-mixin';
 
-var apiBaseUrl = 'http://localhost:3000';//'https://1e22ea73.ngrok.io';
+var apiBaseUrl = 'https://0c575ac1.ngrok.io';
 
 class Designs  extends Component{
   constructor(props, context) {
     super(props, context);
     var ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
     var dd = ds.cloneWithRows([]);
-    this.state = {dataSource: dd};
+    this.state = {dataSource: dd, errMsg:''};
   };
 
   componentDidMount() {
@@ -53,22 +53,36 @@ class Designs  extends Component{
           existingArr.forEach(function(obj) {
             existingObjs[obj.objectId] = obj;
           });
-          var objs = JSON.parse(responseText);
+          try {
+            var objs = JSON.parse(responseText);
+          } catch(e) {
+            errMsg = "Data cannot be retrieve from server now";
+            self.setState({errMsg:errMsg});
+            return;
+          }
 
           var proms = objs.map(function(obj) {            
             var oid = obj.objectId;
             var existingObj = existingObjs[oid];
             if(existingObj && existingObj.base64 && existingObj.base64.length > 0) return Promise.resolve(existingObj);
+            obj.date = Date.now();
+            obj.key = obj.objectKey;
+
             var url = apiBaseUrl + '/api/getThumbnail/'+encodeURIComponent(oid);
             return fetch(url, {body:null, method:'GET', headers:{'Accept': 'application/json'}}).then((response1) => response1.text()).then(
               (responseText1) => {
                 console.log('thumbnail for url', oid);
-
                 obj.base64 = responseText1; 
                 return obj;
               });
           }); //forEach
           Promise.all(proms).then(values=>{
+            values.sort(function(v1, v2) {
+              if(!v1.base64 || v1.base64.length <= 500) return 1; //some invalid base64 has length > 0
+              if(v1.date == v2.date) return 0;
+              else if(v1.date > v2.date) return -1;
+              else return 1;
+            });
             var ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1.objectId !== r2.objectId});
             var dd = ds.cloneWithRows(values);   
             self.setState({dataSource:dd});
@@ -79,10 +93,17 @@ class Designs  extends Component{
   }
 
   render () {
+    var msg = '';
+    if(this.state.errMsg) {
+      msg = this.state.errMsg;
+    } else {
+      msg = '# of designs in your project:' + this.state.dataSource._cachedRowCount;
+    }
     return (
-    <View>
-      <Text style={styles.count}> # of designs in your project: {this.state.dataSource._cachedRowCount} </Text>
+    <View style={styles.listViewWrapper}>
+      <Text style={styles.count}> {msg} </Text>
       <ListView
+        style={styles.listViewContainer}
         dataSource={this.state.dataSource}
         renderRow={(rowData, sectionID, rowID) => 
           <TouchableHighlight onPress={() => {
@@ -92,7 +113,7 @@ class Designs  extends Component{
             <View>
               <View style={styles.row}>
                 <Image style={styles.thumb} source={{uri: rowData.base64}} />
-                <Text style={styles.bucketKey}>{rowData.objectKey}</Text>
+                <Text style={styles.bucketKey}>{rowData.key}</Text>
               </View>
             </View>
           </TouchableHighlight>
@@ -107,6 +128,10 @@ class Designs  extends Component{
   _pressRow(rowID) {
     console.log('clickd row: ', rowID);
   }
+  _renderHeader() {
+ 	  return (<Text>This is some text. This is some text. This is some text. This is some text.</Text>);
+  }
+
   _renderSeperator(sectionID, rowID, adjacentRowHighlighted) {
     return (
       <View
@@ -156,6 +181,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     margin: 10,
   },
+  listViewWrapper: {
+      flex: 1,
+      flexDirection: 'column',
+  },    
+  listViewContainer: {
+      flex: 1,
+      flexDirection: 'column',
+  },  
   instructions: {
     textAlign: 'center',
     color: '#333333',
