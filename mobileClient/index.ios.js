@@ -51,8 +51,8 @@ class Designs  extends Component{
       },
     }).then((response) => response.text())
         .then((responseText) => {
-          var existingSectionIdentity = this.state.dataSource.sectionIdentities[0];
-          var existingArr = this.state.dataSource._dataBlob[existingSectionIdentity];
+          //var existingSectionIdentity = this.state.dataSource.sectionIdentities[0];
+          var existingArr = this.state.allDesigns;//this.state.dataSource._dataBlob[existingSectionIdentity];
           var existingObjs = {};
           existingArr.forEach(function(obj) {
             existingObjs[obj.objectId] = obj;
@@ -88,15 +88,15 @@ class Designs  extends Component{
               else return 1;
             });
             self.setState({allDesigns: values.slice(0)});
-            self._filterBySearch();
+            self._filterBySearch(this.state.searchText);
           });
     })
   }
 
-  _filterBySearch() {
+  _filterBySearch(searchText) {
       var searchResults = this.state.searchResults;
       var filtered = this.state.allDesigns;
-      if(this.state.searchText && this.state.searchText.length > 0 && searchResults) {
+      if(searchText && searchText.length > 0 && searchResults) {
         filtered = filtered.filter((item)=>{
           var bFound = false;
           for(let i=0; i<searchResults.length; ++i) {
@@ -115,13 +115,13 @@ class Designs  extends Component{
       this.setState({dataSource:dd});
   }
 
-  _handleSearchPress() {
-    var text = this.state.searchText;
+  _handleSearchPress(text) {
+    //var text = this.state.searchText;
     var num = parseInt(text);
     console.log('search text: ', num);
     if(text.length <= 0 || num<= 0 || num === NaN) {
       this.setState({searchResults:undefined});
-      this._filterBySearch();
+      this._filterBySearch(text);
       return;
     }
     fetch(apiBaseUrl + '/api/fetch/' + num, {
@@ -133,8 +133,7 @@ class Designs  extends Component{
     }).then((response1) => response1.text()).then((txt)=>{
       var searchResults = JSON.parse(txt);
       this.setState({searchResults:searchResults});
-      console.log(txt);
-      this._filterBySearch();
+      this._filterBySearch(text);
     });
   }
 
@@ -143,7 +142,7 @@ class Designs  extends Component{
     if(this.state.errMsg) {
       msg = this.state.errMsg;
     } else {
-      msg = '# of designs in your project:' + this.state.dataSource._cachedRowCount;
+      msg = '# of designs:' + this.state.dataSource._cachedRowCount;
     }
       // <TouchableOpacity onPress={()=>this._handleSearchPress()}>
       // 	<Text style={styles.button}>Search</Text>
@@ -152,18 +151,19 @@ class Designs  extends Component{
     return (
     <View style={styles.listViewWrapper}>
  
-      <TextInput
-        style={{height: 40, borderColor: 'gray', borderWidth: 1, paddingLeft:10}}
-        onChangeText={(text) => {
-          this.setState({searchText:text});
-          this._handleSearchPress();
-        }}
-        value={this.state.text}
-        keyboardType='number-pad'
-        placeholder='max # triangles'
-      />
-    
-      <Text style={styles.count}> {msg} </Text>
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          onChangeText={(text) => {
+            this.setState({searchText:text});
+            this._handleSearchPress(text);
+          }}
+          value={this.state.text}
+          keyboardType='number-pad'
+          placeholder='max # triangles'
+        />      
+        <Text style={styles.count}> {msg} </Text>
+      </View>
       <ListView
         style={styles.listViewContainer}
         dataSource={this.state.dataSource}
@@ -244,7 +244,7 @@ class DesignListView extends Component {
         <Text style={styles.welcome}>
           Hackthon Project Viewer
         </Text>
-        <Designs navigator={this.props.navigator} ></Designs>
+        <Designs style={styles.designs} navigator={this.props.navigator} ></Designs>
       </View>
     );
   }
@@ -310,6 +310,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F5FCFF',
   },
+  designs: {
+    flex:1,
+  },
   welcome: {
     fontSize: 20,
     textAlign: 'center',
@@ -328,13 +331,11 @@ const styles = StyleSheet.create({
     color: '#333333',
     marginBottom: 5,
   },
-  bucketKey: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
+
   row: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 0,
   },
   thumb: {
@@ -346,17 +347,41 @@ const styles = StyleSheet.create({
     height: 100,
     margin:10,
   },
+  bucketKey: {
+    textAlign: 'center',
+    color: '#333333',
+  },  
   text: {
     flex: 1,
     justifyContent: 'center',
     marginTop:22,
   },  
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 10,
+    marginBottom:10,    
+    borderColor: 'gray',     
+    borderBottomWidth:2,
+    width: 300,
+  },
+  searchInput: {
+    height: 40, 
+    width:120,
+    borderColor: 'gray', 
+    borderWidth: 1, 
+    borderRadius:4,
+    paddingLeft:10,
+    flex:1
+  }, 
   cout: {
     fontSize: 16,
     textAlign: 'center',
     margin: 10,
-    marginBottom:20
-  }, 
+    marginBottom:20,
+    flex:2
+  },  
   button: {
     backgroundColor: 'grey',
     fontSize: 16,
